@@ -22,13 +22,13 @@ from dotenv import find_dotenv, load_dotenv
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-if not os.path.exists("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\PyLauncher"):
-    os.mkdir("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\PyLauncher")
+if not os.path.exists("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher"):
+    os.mkdir("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher")
 
-if not os.path.exists("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\PyLauncher\\appData"):
-    os.mkdir("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\PyLauncher\\appData")
+if not os.path.exists("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher\\appData"):
+    os.mkdir("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher\\appData")
 
-path = os.path.join("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\PyLauncher")
+path = os.path.join("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher")
 
 minecraftDirectory = path
 minecraftDirectory = str(minecraftDirectory).lower()
@@ -213,7 +213,7 @@ def launchGame():
         data = {"username" : accData["name"],
                 "uuid" : accData["id"],
                 "token" : accData["access_token"]}
-    data["launcherName"] = "PyLauncher"
+    data["launcherName"] = "CubusLauncher"
     data["jvmArguments"] = ["-Xmx" + ramTextbox.get("0.0", "end-1c") + "G"]
 
     vers = [name for name in os.listdir(str(minecraftDirectory)+"\\versions\\")
@@ -227,7 +227,7 @@ def launchGame():
     ##          LAUNCH          ##
     
     print("Launching: "+str(instanceChoice)+" with game version: "+str(instanceVersion)+ " at the path: "+str(minecraftDirectory))
-    minecraftDirectory = os.path.join("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\PyLauncher") 
+    minecraftDirectory = os.path.join("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher") 
     subprocess.Popen(minecraftCommand, cwd=minecraftDirectory)
 
 def createInstance():
@@ -239,20 +239,24 @@ def createInstance():
     global restart
 
     versionChoice = versionMenu.get()
-    minecraftDirectory = os.path.join("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\PyLauncher")
+    minecraftDirectory = os.path.join("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher")
     
     if not os.path.exists(str(minecraftDirectory) + "\\instances\\"):
         os.mkdir(str(minecraftDirectory) + "\\instances\\")
 
-    if os.path.exists(str(minecraftDirectory) + "\\instances\\" + instanceTextbox.get("0.0", "end-1c")):
+    instanceName = instanceTextbox.get("0.0", "end-1c").strip()
+    instancePath = os.path.join(minecraftDirectory, "instances", instanceName)
+
+    if os.path.exists(instancePath):
         print("Instance with that name already exists, reinstalling Minecraft Version " + versionChoice + " to that instance.")
-        minecraftDirectory = (str(minecraftDirectory) + "\\instances")
-        shutil.rmtree(str(minecraftDirectory) + "\\" + instanceTextbox.get("0.0", "end-1c") + "\\versions")
-        os.makedirs(str(minecraftDirectory) + "\\" + instanceTextbox.get("0.0", "end-1c") + "\\versions")
-        minecraftDirectory = (str(minecraftDirectory) + instanceTextbox.get("0.0", "end-1c"))
-    elif not os.path.exists(str(minecraftDirectory) + instanceTextbox.get("0.0", "end-1c")):
-        os.mkdir(str(minecraftDirectory) + instanceTextbox.get("0.0", "end-1c"))
-        minecraftDirectory = (str(minecraftDirectory) + instanceTextbox.get("0.0", "end-1c"))
+        versionsPath = os.path.join(instancePath, "versions")
+        if os.path.exists(versionsPath):
+            shutil.rmtree(versionsPath)
+        os.makedirs(versionsPath, exist_ok=True)
+    else:
+        os.makedirs(instancePath, exist_ok=True)
+
+    minecraftDirectory = instancePath
     
     if versionChoice == "latest":
         versionChoice = minecraft_launcher_lib.utils.get_latest_version()["release"]
@@ -289,7 +293,7 @@ def createInstance():
     if os.path.isdir(os.path.join(str(path)+"\\instances\\", name))
     ]
     instancesMenu.configure(values=instances)
-    minecraftDirectory = os.path.join("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\PyLauncher")
+    minecraftDirectory = os.path.join("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher")
 
 installProgressMax = 0
 
@@ -310,12 +314,12 @@ def setMax(new_max: int):
 
 app = ctk.CTk()
 app.geometry("400x500")
-app.title("Python Minecraft Launcher")
+app.title("Cubus Launcher")
 
 ctk.set_appearance_mode("system")
 ctk.set_default_color_theme("green")
 
-label = ctk.CTkLabel(app, text="Minecraft Launcher", fg_color="transparent")
+label = ctk.CTkLabel(app, text="Cubus Launcher", fg_color="transparent")
 label.pack(pady=0, padx=10)
 
 tabview = ctk.CTkTabview(master=app)
