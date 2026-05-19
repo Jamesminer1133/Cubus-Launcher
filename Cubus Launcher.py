@@ -93,7 +93,6 @@ def login(mode):
     clientID = os.getenv("Client_ID")
     clientSecret = os.getenv("Client_Secret")
     redirectURL = os.getenv("Redirect_URL")
-    print(redirectURL)
 
     if mode == "auto":
         try:
