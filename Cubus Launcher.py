@@ -93,6 +93,7 @@ def login(mode):
     clientID = os.getenv("Client_ID")
     clientSecret = os.getenv("Client_Secret")
     redirectURL = os.getenv("Redirect_URL")
+    print(redirectURL)
 
     if mode == "auto":
         try:
@@ -172,6 +173,9 @@ def importMrpack():
     }
 
     minecraft_launcher_lib.mrpack.install_mrpack(path ,str(minecraftDirectory) + "\\instances\\" + name, callback=callback, mrpack_install_options=mrpackInstallConfig)
+
+    ##          RESTART          ##
+
     msg = CTkMessagebox(title="Installation Complete", message="The instance: " + name + " has been installed successfully! Launcher restart required to see changes.",icon="check", option_1="Restart Now", option_2="Restart Later")
     response = msg.get()
     if response=="Restart Now":
@@ -280,20 +284,14 @@ def createInstance():
     else:
         minecraft_launcher_lib.install.install_minecraft_version(versionChoice, minecraftDirectory, callback=callback)
 
+    ##          RESTART          ##
+
     msg = CTkMessagebox(title="Installation Complete", message="The instance: " + instanceTextbox.get("0.0", "end-1c") + " has been installed successfully! Launcher restart required to see changes.",icon="check", option_1="Restart Now", option_2="Restart Later")
     response = msg.get()
     if response=="Restart Now":
         restart = True
         app.destroy()
     
-    ##          REFRESH          ##
-
-    instances = [
-    name for name in os.listdir(str(path)+"\\instances\\")
-    if os.path.isdir(os.path.join(str(path)+"\\instances\\", name))
-    ]
-    instancesMenu.configure(values=instances)
-    minecraftDirectory = os.path.join("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher")
 
 installProgressMax = 0
 
