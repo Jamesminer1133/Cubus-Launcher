@@ -17,8 +17,11 @@ import threading
 import webbrowser
 from time import sleep as wait
 from dotenv import find_dotenv, load_dotenv
+import psutil
 
 ##          INITIALIZE          ##
+
+print("Initializing application...")
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -35,6 +38,10 @@ minecraftDirectory = str(minecraftDirectory).lower()
 instanceVersion = 1.0
 instanceChoice = ""
 restart = False
+
+##          R.A.M. RECCOMENDATION          ##
+ramGB = psutil.virtual_memory().total / (1024 ** 3)
+ramReccomendation = round(ramGB / 4)
 
 if not os.path.exists(str(minecraftDirectory) + "\\instances\\"):
     os.mkdir(str(minecraftDirectory) + "\\instances\\")
@@ -96,15 +103,15 @@ def login(mode):
 
     if mode == "auto":
         try:
-            print("Attempting auto login...")
+            print("Attempting automatic login...")
             with open(str(path) + "\\appData\\accountData.json", "r") as f:
                 accData = json.load(f)
             accData = minecraft_launcher_lib.microsoft_account.complete_refresh(clientID, clientSecret, redirectURL, accData["refresh_token"])
             loggedIn = True
-            print("Auto login successful! Welcome " + accData["name"])
+            print("Automatic login successful! Welcome " + accData["name"])
             return
         except Exception as e:
-            print("Auto login failed:", e)
+            print("Automatic login failed:", e)
             loggedIn = False
             return
     else:
@@ -374,7 +381,7 @@ label = ctk.CTkLabel(playTab, text="R.A.M. Asignment (GB)", fg_color="transparen
 label.pack(pady=0, padx=10)
 
 ramTextbox = ctk.CTkTextbox(playTab)
-ramTextbox.insert("0.0", "4")
+ramTextbox.insert("0.0", str(ramReccomendation))
 ramTextbox.configure(height=20)
 ramTextbox.pack(pady=12, padx=10)
 
