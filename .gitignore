@@ -1,2 +1,8 @@
 .env
-.lnk
+*.lnk
+*.code-workspace
+build/
+dist/
+*.spec
+build.ps1
+icon.ico

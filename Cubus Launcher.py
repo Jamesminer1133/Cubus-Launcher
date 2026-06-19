@@ -1,11 +1,6 @@
 import minecraft_launcher_lib
-from minecraft_launcher_lib import *
-from CTkScrollableDropdown import *
-from CTkScrollableDropdown import CTkScrollableDropdown as scrollable
-from CTkMessagebox import CTkMessagebox
 import subprocess
-import re
-import customtkinter as ctk
+import neotkinter as ntk
 import os
 from tkinter.filedialog import askopenfile as openFile
 import shutil
@@ -20,6 +15,8 @@ from dotenv import find_dotenv, load_dotenv
 import psutil
 
 ##          INITIALIZE          ##
+
+subprocess.run("cls", shell=True)
 
 print("Initializing application...")
 
@@ -65,24 +62,20 @@ mrpackInstallConfig = {
 class OAuthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         global authCode, loggedIn
-        print("PATH:", self.path)
-        print("HEADERS:", self.headers)
-
         query = parse_qs(urlparse(self.path).query)
-
         if "code" in query:
             authCode = query["code"][0]
             loggedIn = True
-
+            print("OAuth login received!")
             self.send_response(200)
             self.end_headers()
             self.wfile.write(b"Login successful!")
-
             threading.Thread(target=self.server.shutdown).start()
-
         else:
             self.send_response(400)
             self.end_headers()
+    def log_message(self, format, *args):
+        return
 
 def startServer():
     server = HTTPServer(("localhost", 8080), OAuthHandler)
@@ -111,7 +104,10 @@ def login(mode):
             print("Automatic login successful! Welcome " + accData["name"])
             return
         except Exception as e:
-            print("Automatic login failed:", e)
+            if "[Errno 2]" in str(e):
+                print("Login failed: user has not logged in before, please login under the ACCOUNT tab.")
+            else:
+                print("Automatic login failed:", e)
             loggedIn = False
             return
     else:
@@ -139,6 +135,7 @@ def logout():
     accData.clear()
     if os.path.exists(str(path) + "\\appData\\accountData.json"):
         os.remove(str(path) + "\\appData\\accountData.json")
+    print("Successfully Logged out!")
 
 def selectModLoader(value):
     global modLoader
@@ -182,7 +179,7 @@ def importMrpack():
 
     ##          RESTART          ##
 
-    msg = CTkMessagebox(title="Installation Complete", message="The instance: " + name + " has been installed successfully! Launcher restart required to see changes.",icon="check", option_1="Restart Now", option_2="Restart Later")
+    msg = ntk.NTkMessageBox(title="Installation Complete", message="The instance: " + name + " has been installed successfully! Launcher restart required to see changes.",icon="check", option_1="Restart Now", option_2="Restart Later")
     response = msg.get()
     if response=="Restart Now":
         restart = True
@@ -292,7 +289,7 @@ def createInstance():
 
     ##          RESTART          ##
 
-    msg = CTkMessagebox(title="Installation Complete", message="The instance: " + instanceTextbox.get("0.0", "end-1c") + " has been installed successfully! Launcher restart required to see changes.",icon="check", option_1="Restart Now", option_2="Restart Later")
+    msg = ntk.NTkMessageBox(title="Installation Complete", message="The instance: " + instanceTextbox.get("0.0", "end-1c") + " has been installed successfully! Launcher restart required to see changes.",icon="check", option_1="Restart Now", option_2="Restart Later")
     response = msg.get()
     if response=="Restart Now":
         restart = True
@@ -316,88 +313,87 @@ def setMax(new_max: int):
 
 ##          GUI          ##
 
-app = ctk.CTk()
+app = ntk.NTk()
 app.geometry("400x500")
 app.title("Cubus Launcher")
 
-ctk.set_appearance_mode("system")
-ctk.set_default_color_theme("green")
+ntk.set_appearance_mode("system")
 
-label = ctk.CTkLabel(app, text="Cubus Launcher", fg_color="transparent")
+label = ntk.NTkLabel(app, text="Cubus Launcher", fg_color="transparent")
 label.pack(pady=0, padx=10)
 
-tabview = ctk.CTkTabview(master=app)
+tabview = ntk.NTkTabview(master=app)
 tabview.add("Play")
 tabview.add("Create Instance")
 tabview.add("Import Instance")
 tabview.add("Account")
 tabview.pack(padx=20, pady=20)
 
-playTab = ctk.CTkScrollableFrame(tabview.tab("Play"), width=400, height=1000)
+playTab = ntk.NTkScrollableFrame(tabview.tab("Play"), width=400, height=1000)
 playTab.pack(pady=12, padx=10)
-createTab = ctk.CTkScrollableFrame(tabview.tab("Create Instance"), width=400, height=1000)
+createTab = ntk.NTkScrollableFrame(tabview.tab("Create Instance"), width=400, height=1000)
 createTab.pack(pady=12, padx=10)
-importTab = ctk.CTkScrollableFrame(tabview.tab("Import Instance"), width=400, height=1000)
+importTab = ntk.NTkScrollableFrame(tabview.tab("Import Instance"), width=400, height=1000)
 importTab.pack(pady=12, padx=10)
-accountTab = ctk.CTkScrollableFrame(tabview.tab("Account"), width=400, height=1000)
+accountTab = ntk.NTkScrollableFrame(tabview.tab("Account"), width=400, height=1000)
 accountTab.pack(pady=12, padx=10)
 
-window = ctk.CTkScrollableFrame(app, width=400, height=1000)
+window = ntk.NTkScrollableFrame(app, width=400, height=1000)
 
-label = ctk.CTkLabel(createTab, text="Instance", fg_color="transparent")
+label = ntk.NTkLabel(createTab, text="Instance", fg_color="transparent")
 label.pack(pady=0, padx=10)
 
-instanceTextbox = ctk.CTkTextbox(createTab)
+instanceTextbox = ntk.NTkTextbox(createTab)
 instanceTextbox.insert("0.0", "Instance Name")
 instanceTextbox.configure(height=20 ,width=200)
 instanceTextbox.pack(pady=12, padx=10)
 
-instancesMenu = ctk.CTkComboBox(playTab, command=setInstanceBox)
+instancesMenu = ntk.NTkComboBox(playTab, command=setInstanceBox)
 instancesMenu.set("Select Instance")
 instancesMenu.configure(values=instances)
-scrollable(instancesMenu, values=instances, width=200 ,command=setInstanceBox)
+ntk.NTkScrollableDropdown(instancesMenu, values=instances, width=200 ,command=setInstanceBox)
 instancesMenu.pack(pady=12, padx=10)
 
-label = ctk.CTkLabel(createTab, text="Version", fg_color="transparent")
+label = ntk.NTkLabel(createTab, text="Version", fg_color="transparent")
 label.pack(pady=0, padx=10)
 
-versionMenu = ctk.CTkComboBox(createTab, command=setVersionBox)
+versionMenu = ntk.NTkComboBox(createTab, command=setVersionBox)
 versionMenu.set("Select Version")
 versionList = []
 for version in minecraft_launcher_lib.utils.get_version_list():
     versionList.append(version["id"])
 versionMenu.configure(values=versionList)
-scrollable(versionMenu, values=versionList, width=200, command=setVersionBox)
+ntk.NTkScrollableDropdown(versionMenu, values=versionList, width=200, command=setVersionBox)
 versionMenu.pack(pady=12, padx=10)
 
-label = ctk.CTkLabel(createTab, text="Modloader", fg_color="transparent")
+label = ntk.NTkLabel(createTab, text="Modloader", fg_color="transparent")
 label.pack(pady=0, padx=10)
 
-modLoaderMultiButon = ctk.CTkSegmentedButton(createTab, values=["None", "Fabric", "Forge", "NeoForge"], command=selectModLoader)
+modLoaderMultiButon = ntk.NTkSegmentedButton(createTab, values=["None", "Fabric", "Forge", "NeoForge"], command=selectModLoader)
 modLoaderMultiButon.set("None")
 modLoaderMultiButon.pack(pady=12, padx=10)
 
-label = ctk.CTkLabel(playTab, text="R.A.M. Asignment (GB)", fg_color="transparent")
+label = ntk.NTkLabel(playTab, text="R.A.M. Asignment (GB)", fg_color="transparent")
 label.pack(pady=0, padx=10)
 
-ramTextbox = ctk.CTkTextbox(playTab)
+ramTextbox = ntk.NTkTextbox(playTab)
 ramTextbox.insert("0.0", str(ramReccomendation))
 ramTextbox.configure(height=20)
 ramTextbox.pack(pady=12, padx=10)
 
-launchButton = ctk.CTkButton(playTab, text="Launch Game", command=launchGame)
+launchButton = ntk.NTkButton(playTab, text="Launch Game", command=launchGame)
 launchButton.pack(pady=12, padx=10)
 
-importMrpackButton = ctk.CTkButton(importTab, text="Import Modrinth Instance (Mrpack)", command=importMrpack)
+importMrpackButton = ntk.NTkButton(importTab, text="Import Modrinth Instance (Mrpack)", command=importMrpack)
 importMrpackButton.pack(pady=12, padx=10)
 
-createButton = ctk.CTkButton(createTab, text="Create Instance", command=createInstance)
+createButton = ntk.NTkButton(createTab, text="Create Instance", command=createInstance)
 createButton.pack(pady=12, padx=10)
 
-loginButton = ctk.CTkButton(accountTab, text="Login", command=lambda: login("online"))
+loginButton = ntk.NTkButton(accountTab, text="Login", command=lambda: login("online"))
 loginButton.pack(pady=12, padx=10)
 
-overrideLoginButton = ctk.CTkButton(accountTab, text="Logout", command=logout, fg_color="#F55858", hover_color="#FF8787")
+overrideLoginButton = ntk.NTkButton(accountTab, text="Logout", command=logout, fg_color="#F55858", hover_color="#FF8787")
 overrideLoginButton.pack(pady=12, padx=10)
 
 
