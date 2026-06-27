@@ -22,13 +22,23 @@ print("Initializing application...")
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-if not os.path.exists("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher"):
+if not os.path.exists(
+    "C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher"
+):
     os.mkdir("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher")
 
-if not os.path.exists("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher\\appData"):
-    os.mkdir("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher\\appData")
+if not os.path.exists(
+    "C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher\\appData"
+):
+    os.mkdir(
+        "C:\\Users\\"
+        + str(os.getlogin())
+        + "\\AppData\\Roaming\\CubusLauncher\\appData"
+    )
 
-path = os.path.join("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher")
+path = os.path.join(
+    "C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher"
+)
 
 minecraftDirectory = path
 minecraftDirectory = str(minecraftDirectory).lower()
@@ -36,9 +46,9 @@ instanceVersion = 1.0
 instanceChoice = ""
 restart = False
 
-##          R.A.M. RECCOMENDATION          ##
-ramGB = psutil.virtual_memory().total / (1024 ** 3)
-ramReccomendation = round(ramGB / 4)
+##          R.A.M. RECOMMENDATION          ##
+ramGB = psutil.virtual_memory().total / (1024**3)
+ramRecommendation = round(ramGB / 4)
 
 if not os.path.exists(str(minecraftDirectory) + "\\instances\\"):
     os.mkdir(str(minecraftDirectory) + "\\instances\\")
@@ -50,14 +60,13 @@ loggedIn = False
 accData = {}
 
 instances = [
-    name for name in os.listdir(str(path)+"\\instances\\")
-    if os.path.isdir(os.path.join(str(path)+"\\instances\\", name))
+    name
+    for name in os.listdir(str(path) + "\\instances\\")
+    if os.path.isdir(os.path.join(str(path) + "\\instances\\", name))
 ]
 
-mrpackInstallConfig = {
-    "optionalFiles": [],
-    "skipDependenciesInstall": False
-}
+mrpackInstallConfig = {"optionalFiles": [], "skipDependenciesInstall": False}
+
 
 class OAuthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -74,45 +83,57 @@ class OAuthHandler(BaseHTTPRequestHandler):
         else:
             self.send_response(400)
             self.end_headers()
+
     def log_message(self, format, *args):
         return
+
 
 def startServer():
     server = HTTPServer(("localhost", 8080), OAuthHandler)
     server.serve_forever()
+
 
 def login(mode):
     global authCode
     global accData
     global loggedIn
 
-    dotenvPath = find_dotenv()
-    load_dotenv(dotenvPath)
+    load_dotenv(
+        os.path.join(sys._MEIPASS, ".env")
+        if getattr(sys, "frozen", False)
+        else find_dotenv()
+    )
 
     authCode = None
     clientID = os.getenv("Client_ID")
     clientSecret = os.getenv("Client_Secret")
-    redirectURL = os.getenv("Redirect_URL")
+    redirectURL = "http://localhost:8080/callback"
 
     if mode == "auto":
         try:
             print("Attempting automatic login...")
             with open(str(path) + "\\appData\\accountData.json", "r") as f:
                 accData = json.load(f)
-            accData = minecraft_launcher_lib.microsoft_account.complete_refresh(clientID, clientSecret, redirectURL, accData["refresh_token"])
+            accData = minecraft_launcher_lib.microsoft_account.complete_refresh(
+                clientID, clientSecret, redirectURL, accData["refresh_token"]
+            )
             loggedIn = True
             print("Automatic login successful! Welcome " + accData["name"])
             return
         except Exception as e:
             if "[Errno 2]" in str(e):
-                print("Login failed: user has not logged in before, please login under the ACCOUNT tab.")
+                print(
+                    "Login failed: user has not logged in before, please login under the ACCOUNT tab."
+                )
             else:
                 print("Automatic login failed:", e)
             loggedIn = False
             return
     else:
         try:
-            loginUrl = minecraft_launcher_lib.microsoft_account.get_login_url(clientID, redirectURL)
+            loginUrl = minecraft_launcher_lib.microsoft_account.get_login_url(
+                clientID, redirectURL
+            )
             threading.Thread(target=startServer, daemon=True).start()
             webbrowser.open(loginUrl)
             print("Waiting for Microsoft login...")
@@ -120,7 +141,9 @@ def login(mode):
                 wait(0.1)
             print("Authorization code received.")
             print("Exchanging access token...")
-            accData = minecraft_launcher_lib.microsoft_account.complete_login(clientID, clientSecret, redirectURL, authCode)
+            accData = minecraft_launcher_lib.microsoft_account.complete_login(
+                clientID, clientSecret, redirectURL, authCode
+            )
             loggedIn = True
             print("Login successful! Welcome " + accData["name"])
             with open(str(path) + "\\appData\\accountData.json", "w") as f:
@@ -129,6 +152,8 @@ def login(mode):
         except Exception as e:
             loggedIn = False
             print("Login failed:", e)
+
+
 def logout():
     global loggedIn
     loggedIn = False
@@ -137,14 +162,17 @@ def logout():
         os.remove(str(path) + "\\appData\\accountData.json")
     print("Successfully Logged out!")
 
+
 def selectModLoader(value):
     global modLoader
     modLoader = value.lower()
+
 
 def setVersionBox(version):
     global versionChoice
     versionChoice = version
     versionMenu.set(version)
+
 
 def setInstanceBox(instance):
     global instanceChoice
@@ -152,8 +180,21 @@ def setInstanceBox(instance):
     global instanceVersion
     instanceChoice = instance
     instancesMenu.set(instance)
-    vers = [name for name in os.listdir(str(minecraftDirectory)+"\\instances\\" + instanceChoice + "\\versions\\")
-            if os.path.isdir(os.path.join(str(minecraftDirectory)+"\\instances\\" + instanceChoice + "\\versions\\", name))]
+    vers = [
+        name
+        for name in os.listdir(
+            str(minecraftDirectory) + "\\instances\\" + instanceChoice + "\\versions\\"
+        )
+        if os.path.isdir(
+            os.path.join(
+                str(minecraftDirectory)
+                + "\\instances\\"
+                + instanceChoice
+                + "\\versions\\",
+                name,
+            )
+        )
+    ]
     instanceVersion = vers[0]
     if len(vers) > 1:
         if "fabric" in vers[1].lower():
@@ -163,25 +204,41 @@ def setInstanceBox(instance):
         elif "neoforge" in vers[1].lower():
             modLoader = "neoforge"
 
+
 def importMrpack():
     global restart
     global minecraftDirectory
-    path = openFile(initialdir=str(os.path.join("C:\\Users\\" + str(os.getlogin()) + "\\Downloads")), title="Select a Modrinth Pack", filetypes=[("Modrinth Packs", "*.mrpack")]).name
+    path = openFile(
+        initialdir=str(
+            os.path.join("C:\\Users\\" + str(os.getlogin()) + "\\Downloads")
+        ),
+        title="Select a Modrinth Pack",
+        filetypes=[("Modrinth Packs", "*.mrpack")],
+    ).name
     name = minecraft_launcher_lib.mrpack.get_mrpack_information(path)["name"]
 
-    callback = {
-        "setStatus": setStatus,
-        "setProgress": setProgress,
-        "setMax": setMax
-    }
+    callback = {"setStatus": setStatus, "setProgress": setProgress, "setMax": setMax}
 
-    minecraft_launcher_lib.mrpack.install_mrpack(path ,str(minecraftDirectory) + "\\instances\\" + name, callback=callback, mrpack_install_options=mrpackInstallConfig)
+    minecraft_launcher_lib.mrpack.install_mrpack(
+        path,
+        str(minecraftDirectory) + "\\instances\\" + name,
+        callback=callback,
+        mrpack_install_options=mrpackInstallConfig,
+    )
 
     ##          RESTART          ##
 
-    msg = ntk.NTkMessageBox(title="Installation Complete", message="The instance: " + name + " has been installed successfully! Launcher restart required to see changes.",icon="check", option_1="Restart Now", option_2="Restart Later")
+    msg = ntk.NTkMessageBox(
+        title="Installation Complete",
+        message="The instance: "
+        + name
+        + " has been installed successfully! Launcher restart required to see changes.",
+        icon="check",
+        option_1="Restart Now",
+        option_2="Restart Later",
+    )
     response = msg.get()
-    if response=="Restart Now":
+    if response == "Restart Now":
         restart = True
         app.destroy()
 
@@ -195,7 +252,7 @@ def launchGame():
     global instanceChoice
     global path
     global loggedIn
-    
+
     minecraftDirectory = path
 
     if not os.path.exists(str(minecraftDirectory) + "\\instances\\"):
@@ -203,39 +260,58 @@ def launchGame():
 
     if not os.path.exists(str(minecraftDirectory) + "\\instances\\" + instanceChoice):
         os.mkdir(str(minecraftDirectory) + "\\instances\\" + instanceChoice)
-        minecraftDirectory = (str(minecraftDirectory) + "\\instances\\" + instanceChoice)
+        minecraftDirectory = str(minecraftDirectory) + "\\instances\\" + instanceChoice
     else:
-        minecraftDirectory = (str(minecraftDirectory) + "\\instances\\" + instanceChoice)
-    
+        minecraftDirectory = str(minecraftDirectory) + "\\instances\\" + instanceChoice
+
     if versionChoice == "latest":
         versionChoice = minecraft_launcher_lib.utils.get_latest_version()["release"]
-    
+
     if versionChoice == "snapshot":
         versionChoice = minecraft_launcher_lib.utils.get_latest_version()["snapshot"]
-    
+
     if loggedIn != True:
         print("Not logged in, please log in to launch the game.")
         return
     else:
-        data = {"username" : accData["name"],
-                "uuid" : accData["id"],
-                "token" : accData["access_token"]}
+        data = {
+            "username": accData["name"],
+            "uuid": accData["id"],
+            "token": accData["access_token"],
+        }
     data["launcherName"] = "CubusLauncher"
     data["jvmArguments"] = ["-Xmx" + ramTextbox.get("0.0", "end-1c") + "G"]
 
-    vers = [name for name in os.listdir(str(minecraftDirectory)+"\\versions\\")
-        if os.path.isdir(os.path.join(str(minecraftDirectory)+"\\versions\\", name))]
+    vers = [
+        name
+        for name in os.listdir(str(minecraftDirectory) + "\\versions\\")
+        if os.path.isdir(os.path.join(str(minecraftDirectory) + "\\versions\\", name))
+    ]
     if len(vers) > 1:
         moddedInstanceVersion = vers[1]
-        minecraftCommand = minecraft_launcher_lib.command.get_minecraft_command(str(moddedInstanceVersion), minecraftDirectory, data)
+        minecraftCommand = minecraft_launcher_lib.command.get_minecraft_command(
+            str(moddedInstanceVersion), minecraftDirectory, data
+        )
     else:
-        minecraftCommand = minecraft_launcher_lib.command.get_minecraft_command(str(instanceVersion), minecraftDirectory, data)
+        minecraftCommand = minecraft_launcher_lib.command.get_minecraft_command(
+            str(instanceVersion), minecraftDirectory, data
+        )
 
     ##          LAUNCH          ##
-    
-    print("Launching: "+str(instanceChoice)+" with game version: "+str(instanceVersion)+ " at the path: "+str(minecraftDirectory))
-    minecraftDirectory = os.path.join("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher") 
+
+    print(
+        "Launching: "
+        + str(instanceChoice)
+        + " with game version: "
+        + str(instanceVersion)
+        + " at the path: "
+        + str(minecraftDirectory)
+    )
+    minecraftDirectory = os.path.join(
+        "C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher"
+    )
     subprocess.Popen(minecraftCommand, cwd=minecraftDirectory)
+
 
 def createInstance():
     global versionToInstall
@@ -246,8 +322,10 @@ def createInstance():
     global restart
 
     versionChoice = versionMenu.get()
-    minecraftDirectory = os.path.join("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher")
-    
+    minecraftDirectory = os.path.join(
+        "C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher"
+    )
+
     if not os.path.exists(str(minecraftDirectory) + "\\instances\\"):
         os.mkdir(str(minecraftDirectory) + "\\instances\\")
 
@@ -255,7 +333,11 @@ def createInstance():
     instancePath = os.path.join(minecraftDirectory, "instances", instanceName)
 
     if os.path.exists(instancePath):
-        print("Instance with that name already exists, reinstalling Minecraft Version " + versionChoice + " to that instance.")
+        print(
+            "Instance with that name already exists, reinstalling Minecraft Version "
+            + versionChoice
+            + " to that instance."
+        )
         versionsPath = os.path.join(instancePath, "versions")
         if os.path.exists(versionsPath):
             shutil.rmtree(versionsPath)
@@ -264,39 +346,48 @@ def createInstance():
         os.makedirs(instancePath, exist_ok=True)
 
     minecraftDirectory = instancePath
-    
+
     if versionChoice == "latest":
         versionChoice = minecraft_launcher_lib.utils.get_latest_version()["release"]
-    
+
     if versionChoice == "snapshot":
         versionChoice = minecraft_launcher_lib.utils.get_latest_version()["snapshot"]
-    
+
     if modLoader != "none":
-        modLoader =  minecraft_launcher_lib.mod_loader.get_mod_loader(modLoader)
-    
-    callback = {
-        "setStatus": setStatus,
-        "setProgress": setProgress,
-        "setMax": setMax
-    }
+        modLoader = minecraft_launcher_lib.mod_loader.get_mod_loader(modLoader)
+
+    callback = {"setStatus": setStatus, "setProgress": setProgress, "setMax": setMax}
 
     ##          INSTALL          ##
-    
+
     if modLoader != "none":
-        versionToInstall = modLoader.install(versionChoice, minecraftDirectory, callback=callback)
+        versionToInstall = modLoader.install(
+            versionChoice, minecraftDirectory, callback=callback
+        )
     else:
-        minecraft_launcher_lib.install.install_minecraft_version(versionChoice, minecraftDirectory, callback=callback)
+        minecraft_launcher_lib.install.install_minecraft_version(
+            versionChoice, minecraftDirectory, callback=callback
+        )
 
     ##          RESTART          ##
 
-    msg = ntk.NTkMessageBox(title="Installation Complete", message="The instance: " + instanceTextbox.get("0.0", "end-1c") + " has been installed successfully! Launcher restart required to see changes.",icon="check", option_1="Restart Now", option_2="Restart Later")
+    msg = ntk.NTkMessageBox(
+        title="Installation Complete",
+        message="The instance: "
+        + instanceTextbox.get("0.0", "end-1c")
+        + " has been installed successfully! Launcher restart required to see changes.",
+        icon="check",
+        option_1="Restart Now",
+        option_2="Restart Later",
+    )
     response = msg.get()
-    if response=="Restart Now":
+    if response == "Restart Now":
         restart = True
         app.destroy()
-    
+
 
 installProgressMax = 0
+
 
 def setStatus(status: str):
     print(status)
@@ -310,6 +401,7 @@ def setProgress(progress: int):
 def setMax(new_max: int):
     global installProgressMax
     installProgressMax = new_max
+
 
 ##          GUI          ##
 
@@ -331,9 +423,13 @@ tabview.pack(padx=20, pady=20)
 
 playTab = ntk.NTkScrollableFrame(tabview.tab("Play"), width=400, height=1000)
 playTab.pack(pady=12, padx=10)
-createTab = ntk.NTkScrollableFrame(tabview.tab("Create Instance"), width=400, height=1000)
+createTab = ntk.NTkScrollableFrame(
+    tabview.tab("Create Instance"), width=400, height=1000
+)
 createTab.pack(pady=12, padx=10)
-importTab = ntk.NTkScrollableFrame(tabview.tab("Import Instance"), width=400, height=1000)
+importTab = ntk.NTkScrollableFrame(
+    tabview.tab("Import Instance"), width=400, height=1000
+)
 importTab.pack(pady=12, padx=10)
 accountTab = ntk.NTkScrollableFrame(tabview.tab("Account"), width=400, height=1000)
 accountTab.pack(pady=12, padx=10)
@@ -345,13 +441,15 @@ label.pack(pady=0, padx=10)
 
 instanceTextbox = ntk.NTkTextbox(createTab)
 instanceTextbox.insert("0.0", "Instance Name")
-instanceTextbox.configure(height=20 ,width=200)
+instanceTextbox.configure(height=20, width=200)
 instanceTextbox.pack(pady=12, padx=10)
 
 instancesMenu = ntk.NTkComboBox(playTab, command=setInstanceBox)
 instancesMenu.set("Select Instance")
 instancesMenu.configure(values=instances)
-ntk.NTkScrollableDropdown(instancesMenu, values=instances, width=200 ,command=setInstanceBox)
+ntk.NTkScrollableDropdown(
+    instancesMenu, values=instances, width=200, command=setInstanceBox
+)
 instancesMenu.pack(pady=12, padx=10)
 
 label = ntk.NTkLabel(createTab, text="Version", fg_color="transparent")
@@ -363,28 +461,34 @@ versionList = []
 for version in minecraft_launcher_lib.utils.get_version_list():
     versionList.append(version["id"])
 versionMenu.configure(values=versionList)
-ntk.NTkScrollableDropdown(versionMenu, values=versionList, width=200, command=setVersionBox)
+ntk.NTkScrollableDropdown(
+    versionMenu, values=versionList, width=200, command=setVersionBox
+)
 versionMenu.pack(pady=12, padx=10)
 
 label = ntk.NTkLabel(createTab, text="Modloader", fg_color="transparent")
 label.pack(pady=0, padx=10)
 
-modLoaderMultiButon = ntk.NTkSegmentedButton(createTab, values=["None", "Fabric", "Forge", "NeoForge"], command=selectModLoader)
-modLoaderMultiButon.set("None")
-modLoaderMultiButon.pack(pady=12, padx=10)
+modLoaderMultiButton = ntk.NTkSegmentedButton(
+    createTab, values=["None", "Fabric", "Forge", "NeoForge"], command=selectModLoader
+)
+modLoaderMultiButton.set("None")
+modLoaderMultiButton.pack(pady=12, padx=10)
 
-label = ntk.NTkLabel(playTab, text="R.A.M. Asignment (GB)", fg_color="transparent")
+label = ntk.NTkLabel(playTab, text="R.A.M. Assignment (GB)", fg_color="transparent")
 label.pack(pady=0, padx=10)
 
 ramTextbox = ntk.NTkTextbox(playTab)
-ramTextbox.insert("0.0", str(ramReccomendation))
+ramTextbox.insert("0.0", str(ramRecommendation))
 ramTextbox.configure(height=20)
 ramTextbox.pack(pady=12, padx=10)
 
 launchButton = ntk.NTkButton(playTab, text="Launch Game", command=launchGame)
 launchButton.pack(pady=12, padx=10)
 
-importMrpackButton = ntk.NTkButton(importTab, text="Import Modrinth Instance (Mrpack)", command=importMrpack)
+importMrpackButton = ntk.NTkButton(
+    importTab, text="Import Modrinth Instance (Mrpack)", command=importMrpack
+)
 importMrpackButton.pack(pady=12, padx=10)
 
 createButton = ntk.NTkButton(createTab, text="Create Instance", command=createInstance)
@@ -393,7 +497,9 @@ createButton.pack(pady=12, padx=10)
 loginButton = ntk.NTkButton(accountTab, text="Login", command=lambda: login("online"))
 loginButton.pack(pady=12, padx=10)
 
-overrideLoginButton = ntk.NTkButton(accountTab, text="Logout", command=logout, fg_color="#F55858", hover_color="#FF8787")
+overrideLoginButton = ntk.NTkButton(
+    accountTab, text="Logout", command=logout, fg_color="#F55858", hover_color="#FF8787"
+)
 overrideLoginButton.pack(pady=12, padx=10)
 
 
