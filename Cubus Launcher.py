@@ -419,20 +419,19 @@ tabview.add("Play")
 tabview.add("Create Instance")
 tabview.add("Import Instance")
 tabview.add("Account")
-tabview.pack(padx=20, pady=20)
+tabview.pack(padx=10, pady=10, expand=True, fill="both")
 
 playTab = ntk.NTkScrollableFrame(tabview.tab("Play"), width=400, height=1000)
-playTab.pack(pady=12, padx=10)
-createTab = ntk.NTkScrollableFrame(
-    tabview.tab("Create Instance"), width=400, height=1000
-)
-createTab.pack(pady=12, padx=10)
-importTab = ntk.NTkScrollableFrame(
-    tabview.tab("Import Instance"), width=400, height=1000
-)
-importTab.pack(pady=12, padx=10)
+playTab.pack(padx=10, pady=10, expand=True, fill="both")
+
+createTab = ntk.NTkScrollableFrame(tabview.tab("Create Instance"), width=400, height=1000)
+createTab.pack(padx=10, pady=10, expand=True, fill="both")
+
+importTab = ntk.NTkScrollableFrame(tabview.tab("Import Instance"), width=400, height=1000)
+importTab.pack(padx=10, pady=10, expand=True, fill="both")
+
 accountTab = ntk.NTkScrollableFrame(tabview.tab("Account"), width=400, height=1000)
-accountTab.pack(pady=12, padx=10)
+accountTab.pack(padx=10, pady=10, expand=True, fill="both")
 
 window = ntk.NTkScrollableFrame(app, width=400, height=1000)
 
@@ -447,9 +446,7 @@ instanceTextbox.pack(pady=12, padx=10)
 instancesMenu = ntk.NTkComboBox(playTab, command=setInstanceBox)
 instancesMenu.set("Select Instance")
 instancesMenu.configure(values=instances)
-ntk.NTkScrollableDropdown(
-    instancesMenu, values=instances, width=200, command=setInstanceBox
-)
+ntk.NTkScrollableDropdown(instancesMenu, values=instances, width=200, command=setInstanceBox)
 instancesMenu.pack(pady=12, padx=10)
 
 label = ntk.NTkLabel(createTab, text="Version", fg_color="transparent")
@@ -461,17 +458,13 @@ versionList = []
 for version in minecraft_launcher_lib.utils.get_version_list():
     versionList.append(version["id"])
 versionMenu.configure(values=versionList)
-ntk.NTkScrollableDropdown(
-    versionMenu, values=versionList, width=200, command=setVersionBox
-)
+ntk.NTkScrollableDropdown(versionMenu, values=versionList, width=200, command=setVersionBox)
 versionMenu.pack(pady=12, padx=10)
 
 label = ntk.NTkLabel(createTab, text="Modloader", fg_color="transparent")
 label.pack(pady=0, padx=10)
 
-modLoaderMultiButton = ntk.NTkSegmentedButton(
-    createTab, values=["None", "Fabric", "Forge", "NeoForge"], command=selectModLoader
-)
+modLoaderMultiButton = ntk.NTkSegmentedButton(createTab, values=["None", "Fabric", "Forge", "NeoForge"], command=selectModLoader)
 modLoaderMultiButton.set("None")
 modLoaderMultiButton.pack(pady=12, padx=10)
 
@@ -486,9 +479,7 @@ ramTextbox.pack(pady=12, padx=10)
 launchButton = ntk.NTkButton(playTab, text="Launch Game", command=launchGame)
 launchButton.pack(pady=12, padx=10)
 
-importMrpackButton = ntk.NTkButton(
-    importTab, text="Import Modrinth Instance (Mrpack)", command=importMrpack
-)
+importMrpackButton = ntk.NTkButton(importTab, text="Import Modrinth Instance (Mrpack)", command=importMrpack)
 importMrpackButton.pack(pady=12, padx=10)
 
 createButton = ntk.NTkButton(createTab, text="Create Instance", command=createInstance)
@@ -497,9 +488,7 @@ createButton.pack(pady=12, padx=10)
 loginButton = ntk.NTkButton(accountTab, text="Login", command=lambda: login("online"))
 loginButton.pack(pady=12, padx=10)
 
-overrideLoginButton = ntk.NTkButton(
-    accountTab, text="Logout", command=logout, fg_color="#F55858", hover_color="#FF8787"
-)
+overrideLoginButton = ntk.NTkButton(accountTab, text="Logout", command=logout, fg_color="#F55858", hover_color="#FF8787")
 overrideLoginButton.pack(pady=12, padx=10)
 
 
