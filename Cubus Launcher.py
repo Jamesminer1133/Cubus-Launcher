@@ -22,23 +22,16 @@ print("Initializing application...")
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-if not os.path.exists(
-    "C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher"
-):
+if not os.path.exists("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher"):
     os.mkdir("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher")
 
-if not os.path.exists(
-    "C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher\\appData"
-):
+if not os.path.exists("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher\\appData"):
     os.mkdir(
         "C:\\Users\\"
         + str(os.getlogin())
-        + "\\AppData\\Roaming\\CubusLauncher\\appData"
-    )
+        + "\\AppData\\Roaming\\CubusLauncher\\appData")
 
-path = os.path.join(
-    "C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher"
-)
+path = os.path.join("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher")
 
 minecraftDirectory = path
 minecraftDirectory = str(minecraftDirectory).lower()
@@ -101,8 +94,7 @@ def login(mode):
     load_dotenv(
         os.path.join(sys._MEIPASS, ".env")
         if getattr(sys, "frozen", False)
-        else find_dotenv()
-    )
+        else find_dotenv())
 
     authCode = None
     clientID = os.getenv("Client_ID")
@@ -118,13 +110,11 @@ def login(mode):
                 clientID, clientSecret, redirectURL, accData["refresh_token"]
             )
             loggedIn = True
-            print("Automatic login successful! Welcome " + accData["name"])
+            print(f"Automatic login successful! Welcome {accData.name}")
             return
         except Exception as e:
             if "[Errno 2]" in str(e):
-                print(
-                    "Login failed: user has not logged in before, please login under the ACCOUNT tab."
-                )
+                print("Login failed: user has not logged in before, please login under the ACCOUNT tab.")
             else:
                 print("Automatic login failed:", e)
             loggedIn = False
