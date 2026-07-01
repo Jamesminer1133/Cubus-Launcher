@@ -2,7 +2,6 @@ import minecraft_launcher_lib
 import subprocess
 import neotkinter as ntk
 import os
-from tkinter.filedialog import askopenfile as openFile
 import shutil
 import json
 import sys
@@ -13,6 +12,7 @@ import webbrowser
 from time import sleep as wait
 from dotenv import find_dotenv, load_dotenv
 import psutil
+import requests
 
 ##          INITIALIZE          ##
 
@@ -22,16 +22,18 @@ print("Initializing application...")
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-if not os.path.exists("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher"):
-    os.mkdir("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher")
+path = os.path.join("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming")
 
-if not os.path.exists("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher\\appData"):
-    os.mkdir(
-        "C:\\Users\\"
-        + str(os.getlogin())
-        + "\\AppData\\Roaming\\CubusLauncher\\appData")
+cbsFolder = os.path.join(path, "CubusLauncher")
+os.makedirs(cbsFolder, exist_ok=True)
 
 path = os.path.join("C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher")
+
+tempFolder = os.path.join(path, "temp")
+os.makedirs(tempFolder, exist_ok=True)
+
+dataFolder = os.path.join(path, "appData")
+os.makedirs(dataFolder, exist_ok=True)
 
 minecraftDirectory = path
 minecraftDirectory = str(minecraftDirectory).lower()
@@ -86,6 +88,93 @@ def startServer():
     server.serve_forever()
 
 
+def downloadModrinthPack():
+    global restart
+    global minecraftDirectory
+
+    query = downloadMRTextbox.get("0.0", "end-1c").strip()
+    wantedVersion = downloadMRVersionTextbox.get("0.0", "end-1c").strip()
+    print("Searching Modrinth...")
+    response = requests.get("https://api.modrinth.com/v2/search",params={"query": query, "facets": '[["project_type:modpack"]]'},)
+    response.raise_for_status()
+    hits = response.json()["hits"]
+    if not hits:
+        print("No modpack found.")
+        return
+    project = None
+    for pack in hits:
+        if pack["title"].lower() == query.lower():
+            project = pack
+            break
+    if project is None:
+        project = hits[0]
+    print("Selected:", project["title"])
+    versions = requests.get(f"https://api.modrinth.com/v2/project/{project['project_id']}/version")
+    versions.raise_for_status()
+    versions = versions.json()
+    if not versions:
+        print("No versions available.")
+        return
+    selectedVersion = None
+    # Version override
+    if wantedVersion != "":
+        for version in versions:
+            if wantedVersion in version["game_versions"]:
+                selectedVersion = version
+                break
+        if selectedVersion is None:
+            print("Couldn't find that Minecraft version.")
+            return
+    else:
+        selectedVersion = versions[0]
+    file = selectedVersion["files"][0]
+    print("Downloading:", file["filename"])
+    download = requests.get(file["url"])
+    download.raise_for_status()
+    savePath = os.path.join(tempFolder, file["filename"])
+    with open(savePath, "wb") as f:
+        f.write(download.content)
+    print("Download complete.")
+
+    print("Installing modpack...")
+
+    ##        INSTALL        ##
+
+    path = os.path.join(tempFolder, file["filename"])
+    if not path:
+        print("No file selected.")
+        return
+    name = minecraft_launcher_lib.mrpack.get_mrpack_information(path)["name"]
+
+    callback = {"setStatus": setStatus, "setProgress": setProgress, "setMax": setMax}
+
+    minecraft_launcher_lib.mrpack.install_mrpack(
+        path,
+        str(minecraftDirectory) + "\\instances\\" + name,
+        callback=callback,
+        mrpack_install_options=mrpackInstallConfig,
+    )
+
+    if os.path.exists(path):
+        os.remove(path)
+
+    ##          RESTART          ##
+
+    msg = ntk.NTkMessageBox(
+        title="Installation Complete",
+        message="The instance: "
+        + name
+        + " has been installed successfully! Launcher restart required to see changes.",
+        icon="check",
+        option_1="Restart Now",
+        option_2="Restart Later",
+    )
+    response = msg.get()
+    if response == "Restart Now":
+        restart = True
+        app.destroy()
+
+
 def login(mode):
     global authCode
     global accData
@@ -110,7 +199,7 @@ def login(mode):
                 clientID, clientSecret, redirectURL, accData["refresh_token"]
             )
             loggedIn = True
-            print(f"Automatic login successful! Welcome {accData.name}")
+            print(f"Automatic login successful! Welcome {accData['name']}")
             return
         except Exception as e:
             if "[Errno 2]" in str(e):
@@ -198,13 +287,16 @@ def setInstanceBox(instance):
 def importMrpack():
     global restart
     global minecraftDirectory
-    path = openFile(
+    path = ntk.filedialog.askopenfile(
         initialdir=str(
             os.path.join("C:\\Users\\" + str(os.getlogin()) + "\\Downloads")
         ),
         title="Select a Modrinth Pack",
         filetypes=[("Modrinth Packs", "*.mrpack")],
     ).name
+    if not path:
+        print("No file selected.")
+        return
     name = minecraft_launcher_lib.mrpack.get_mrpack_information(path)["name"]
 
     callback = {"setStatus": setStatus, "setProgress": setProgress, "setMax": setMax}
@@ -407,7 +499,7 @@ label.pack(pady=0, padx=10)
 tabview = ntk.NTkTabview(master=app)
 tabview.add("Play")
 tabview.add("Create Instance")
-tabview.add("Import Instance")
+tabview.add("Modrinth")
 tabview.add("Account")
 tabview.pack(padx=10, pady=10, expand=True, fill="both")
 
@@ -417,8 +509,8 @@ playTab.pack(padx=10, pady=10, expand=True, fill="both")
 createTab = ntk.NTkScrollableFrame(tabview.tab("Create Instance"), width=400, height=1000)
 createTab.pack(padx=10, pady=10, expand=True, fill="both")
 
-importTab = ntk.NTkScrollableFrame(tabview.tab("Import Instance"), width=400, height=1000)
-importTab.pack(padx=10, pady=10, expand=True, fill="both")
+modrinthTab = ntk.NTkScrollableFrame(tabview.tab("Modrinth"), width=400, height=1000)
+modrinthTab.pack(padx=10, pady=10, expand=True, fill="both")
 
 accountTab = ntk.NTkScrollableFrame(tabview.tab("Account"), width=400, height=1000)
 accountTab.pack(padx=10, pady=10, expand=True, fill="both")
@@ -469,7 +561,7 @@ ramTextbox.pack(pady=12, padx=10)
 launchButton = ntk.NTkButton(playTab, text="Launch Game", command=launchGame)
 launchButton.pack(pady=12, padx=10)
 
-importMrpackButton = ntk.NTkButton(importTab, text="Import Modrinth Instance (Mrpack)", command=importMrpack)
+importMrpackButton = ntk.NTkButton(modrinthTab, text="Import Modrinth Instance (Mrpack)", command=importMrpack)
 importMrpackButton.pack(pady=12, padx=10)
 
 createButton = ntk.NTkButton(createTab, text="Create Instance", command=createInstance)
@@ -480,6 +572,24 @@ loginButton.pack(pady=12, padx=10)
 
 overrideLoginButton = ntk.NTkButton(accountTab, text="Logout", command=logout, fg_color="#F55858", hover_color="#FF8787")
 overrideLoginButton.pack(pady=12, padx=10)
+
+label = ntk.NTkLabel(modrinthTab, text="Download Modrinth Pack", fg_color="transparent")
+label.pack(pady=0, padx=10)
+
+downloadMRTextbox = ntk.NTkTextbox(modrinthTab)
+downloadMRTextbox.insert("0.0", "Modpack Name")
+downloadMRTextbox.configure(height=20)
+downloadMRTextbox.pack(pady=12, padx=10)
+
+label = ntk.NTkLabel(modrinthTab, text="Modpack Game Version (Blank for latest)", fg_color="transparent")
+label.pack(pady=0, padx=10)
+
+downloadMRVersionTextbox = ntk.NTkTextbox(modrinthTab)
+downloadMRVersionTextbox.configure(height=20)
+downloadMRVersionTextbox.pack(pady=12, padx=10)
+
+downloadMRButton = ntk.NTkButton(modrinthTab, text="Download Modrinth Pack", command=downloadModrinthPack)
+downloadMRButton.pack(pady=12, padx=10)
 
 
 ##          AUTOMATIC LOGIN ATTEMPT          ##
