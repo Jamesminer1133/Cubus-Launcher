@@ -6,3 +6,4 @@ dist/
 *.spec
 build.ps1
 icon.ico
+guiConcept.py
