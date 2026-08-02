@@ -58,6 +58,7 @@ loggedIn = False
 accData = {}
 minecraftProcess = None
 accountName = ""
+instancesOpen = 0
 
 instances = [
     name
@@ -97,8 +98,9 @@ def downloadModrinthPack():
     global restart
     global minecraftDirectory
 
-    #query = downloadMRTextbox.get("0.0", "end-1c").strip()
-    #wantedVersion = downloadMRVersionTextbox.get("0.0", "end-1c").strip()
+    # TODO: REWRITE INTO NEW G.U.I. FORMAT
+    # query = downloadMRTextbox.get("0.0", "end-1c").strip()
+    # wantedVersion = downloadMRVersionTextbox.get("0.0", "end-1c").strip()
     print("Searching Modrinth...")
     response = requests.get(
         "https://api.modrinth.com/v2/search",
@@ -111,9 +113,10 @@ def downloadModrinthPack():
         return
     project = None
     for pack in hits:
-    #    if pack["title"].lower() == query.lower():
-            project = pack
-            break
+        # TODO: REWRITE INTO NEW G.U.I. FORMAT
+        #    if pack["title"].lower() == query.lower():
+        project = pack
+        break
     if project is None:
         project = hits[0]
     print("Selected:", project["title"])
@@ -126,17 +129,18 @@ def downloadModrinthPack():
         print("No versions available.")
         return
     selectedVersion = None
+    # TODO: REWRITE INTO NEW G.U.I. FORMAT
     # Version override
-    #if wantedVersion != "":
-        #for version in versions:
-            #if wantedVersion in version["game_versions"]:
-                #selectedVersion = version
-                #break
-        #if selectedVersion is None:
-            #print("Couldn't find that Minecraft version.")
-            #return
-    #else:
-        #selectedVersion = versions[0]
+    # if wantedVersion != "":
+    # for version in versions:
+    # if wantedVersion in version["game_versions"]:
+    # selectedVersion = version
+    # break
+    # if selectedVersion is None:
+    # print("Couldn't find that Minecraft version.")
+    # return
+    # else:
+    # selectedVersion = versions[0]
     file = selectedVersion["files"][0]
     print("Downloading:", file["filename"])
     download = requests.get(file["url"])
@@ -262,49 +266,6 @@ def logout():
     accountName = ""
     refreshAccountDetails()
 
-
-def selectModLoader(value):
-    global modLoader
-    modLoader = value.lower()
-
-
-def setVersionBox(version):
-    global versionChoice
-    versionChoice = version
-    #versionMenu.set(version)
-
-
-def setInstanceBox(instance):
-    global instanceChoice
-    global modLoader
-    global instanceVersion
-    instanceChoice = instance
-    #instancesMenu.set(instance)
-    vers = [
-        name
-        for name in os.listdir(
-            str(minecraftDirectory) + "\\instances\\" + instanceChoice + "\\versions\\"
-        )
-        if os.path.isdir(
-            os.path.join(
-                str(minecraftDirectory)
-                + "\\instances\\"
-                + instanceChoice
-                + "\\versions\\",
-                name,
-            )
-        )
-    ]
-    instanceVersion = vers[0]
-    if len(vers) > 1:
-        if "fabric" in vers[1].lower():
-            modLoader = "fabric"
-        elif "forge" in vers[1].lower():
-            modLoader = "forge"
-        elif "neoforge" in vers[1].lower():
-            modLoader = "neoforge"
-
-
 def importMrpack():
     global restart
     global minecraftDirectory
@@ -315,7 +276,7 @@ def importMrpack():
         title="Select a Modrinth Pack",
         filetypes=[("Modrinth Packs", "*.mrpack")],
     ).name
-    if not path:
+    if not path or path == None:
         print("No file selected.")
         return
     name = minecraft_launcher_lib.mrpack.get_mrpack_information(path)["name"]
@@ -328,90 +289,94 @@ def importMrpack():
         callback=callback,
         mrpack_install_options=mrpackInstallConfig,
     )
-
-    ##          RESTART          ##
-
-    msg = ntk.NTkMessageBox(
-        title="Installation Complete",
-        message="The instance: "
-        + name
-        + " has been installed successfully! Launcher restart required to see changes.",
-        icon="check",
-        option_1="Restart Now",
-        option_2="Restart Later",
-    )
-    response = msg.get()
-    if response == "Restart Now":
-        restart = True
-        app.destroy()
+    updateInstances()
+    CreateNewInstanceMenu1Close()
 
 
 def launchGame(instanceChoice : str, versionChoice : str):
-    global minecraftDirectory
-    global path
-    global loggedIn
-    global minecraftProcess
+    try:
+        global instancesOpen
+        global minecraftDirectory
+        global path
+        global loggedIn
+        global minecraftProcess
 
-    minecraftDirectory = path
+        minecraftDirectory = path
 
-    if not os.path.exists(str(minecraftDirectory) + "\\instances\\"):
-        os.mkdir(str(minecraftDirectory) + "\\instances\\")
+        if not os.path.exists(str(minecraftDirectory) + "\\instances\\"):
+            os.mkdir(str(minecraftDirectory) + "\\instances\\")
 
-    if not os.path.exists(str(minecraftDirectory) + "\\instances\\" + instanceChoice):
-        os.mkdir(str(minecraftDirectory) + "\\instances\\" + instanceChoice)
-        minecraftDirectory = str(minecraftDirectory) + "\\instances\\" + instanceChoice
-    else:
-        minecraftDirectory = str(minecraftDirectory) + "\\instances\\" + instanceChoice
+        if not os.path.exists(str(minecraftDirectory) + "\\instances\\" + instanceChoice):
+            os.mkdir(str(minecraftDirectory) + "\\instances\\" + instanceChoice)
+            minecraftDirectory = str(minecraftDirectory) + "\\instances\\" + instanceChoice
+        else:
+            minecraftDirectory = str(minecraftDirectory) + "\\instances\\" + instanceChoice
 
-    if versionChoice == "latest":
-        versionChoice = minecraft_launcher_lib.utils.get_latest_version()["release"]
+        if versionChoice == "latest":
+            versionChoice = minecraft_launcher_lib.utils.get_latest_version()["release"]
 
-    if versionChoice == "snapshot":
-        versionChoice = minecraft_launcher_lib.utils.get_latest_version()["snapshot"]
+        if versionChoice == "snapshot":
+            versionChoice = minecraft_launcher_lib.utils.get_latest_version()["snapshot"]
 
-    if loggedIn != True:
-        print("Not logged in, please log in to launch the game.")
-        return
-    else:
-        data = {
-            "username": accData["name"],
-            "uuid": accData["id"],
-            "token": accData["access_token"],
-        }
-    data["launcherName"] = "CubusLauncher"
-    # data["jvmArguments"] = ["-Xmx" + ramTextbox.get("0.0", "end-1c") + "G"]
-    data["jvmArguments"] = ["-Xmx" + "8" + "G"]
+        if loggedIn != True:
+            print("Not logged in, please log in to launch the game.")
+            return
+        else:
+            data = {
+                "username": accData["name"],
+                "uuid": accData["id"],
+                "token": accData["access_token"],
+            }
+        if instancesOpen >= 1:
+            data["username"] = accData["name"] + "_" + str(instancesOpen)
+        instancesOpen += 1
+        data["launcherName"] = "CubusLauncher"
+        # TODO: REWRITE INTO NEW G.U.I. FORMAT
+        # data["jvmArguments"] = ["-Xmx" + ramTextbox.get("0.0", "end-1c") + "G"]
+        data["jvmArguments"] = ["-Xmx" + "8" + "G"]
 
-    vers = [
-        name
-        for name in os.listdir(str(minecraftDirectory) + "\\versions\\")
-        if os.path.isdir(os.path.join(str(minecraftDirectory) + "\\versions\\", name))
-    ]
-    if len(vers) > 1:
-        moddedInstanceVersion = vers[1]
-        minecraftCommand = minecraft_launcher_lib.command.get_minecraft_command(
-            str(moddedInstanceVersion), minecraftDirectory, data
+        vers = [
+            name
+            for name in os.listdir(str(minecraftDirectory) + "\\versions\\")
+            if os.path.isdir(os.path.join(str(minecraftDirectory) + "\\versions\\", name))
+        ]
+        if len(vers) > 1:
+            moddedInstanceVersion = vers[1]
+            minecraftCommand = minecraft_launcher_lib.command.get_minecraft_command(
+                str(moddedInstanceVersion), minecraftDirectory, data
+            )
+        else:
+            minecraftCommand = minecraft_launcher_lib.command.get_minecraft_command(
+                str(versionChoice), minecraftDirectory, data
+            )
+
+        ##          LAUNCH          ##
+
+        print(
+            "Launching: "
+            + str(instanceChoice)
+            + " with game version: "
+            + str(versionChoice)
+            + " at the path: "
+            + str(minecraftDirectory)
         )
-    else:
-        minecraftCommand = minecraft_launcher_lib.command.get_minecraft_command(
-            str(versionChoice), minecraftDirectory, data
+        minecraftDirectory = os.path.join(
+            "C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher"
         )
-
-    ##          LAUNCH          ##
-
-    print(
-        "Launching: "
-        + str(instanceChoice)
-        + " with game version: "
-        + str(versionChoice)
-        + " at the path: "
-        + str(minecraftDirectory)
-    )
-    minecraftDirectory = os.path.join(
-        "C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher"
-    )
-    minecraftProcess = subprocess.Popen(minecraftCommand, cwd=minecraftDirectory)
-
+        minecraftProcess = subprocess.Popen(minecraftCommand, cwd=minecraftDirectory)
+    except Exception as e:
+        print(f"Launch failed: {e}")
+        print("Attempting to close all instances open.")
+        for i in range(instancesOpen-1):
+            quitGame()
+        ntk.NTkMessageBox(
+            title="Launch Failed",
+            message="The instance: "
+            + instanceChoice
+            + " failed to launch.",
+            icon="cancel",
+            option_1="Ok",
+        )
 
 def quitGame():
     global minecraftProcess
@@ -427,14 +392,12 @@ def quitGame():
         except subprocess.TimeoutExpired:
             minecraftProcess.kill()
             minecraftProcess.wait()
-        print("Minecraft closed.")
-    else:
-        print("Minecraft has already exited.")
 
     minecraftProcess = None
 
 
 def monitorMinecraft(entry):
+    global instancesOpen
     global minecraftProcess
 
     if minecraftProcess is None:
@@ -446,16 +409,14 @@ def monitorMinecraft(entry):
     minecraftProcess = None
 
     app.after(0, entry.onGameClosed)
+    print("Minecraft has been closed")
+    instancesOpen -= 1
 
-def createInstance():
-    global versionToInstall
-    global versionChoice
+def createInstance(version: str, modLoader: str, name: str):
     global minecraftDirectory
-    global modLoader
     global instances
     global restart
 
-    #versionChoice = versionMenu.get()
     minecraftDirectory = os.path.join(
         "C:\\Users\\" + str(os.getlogin()) + "\\AppData\\Roaming\\CubusLauncher"
     )
@@ -463,29 +424,22 @@ def createInstance():
     if not os.path.exists(str(minecraftDirectory) + "\\instances\\"):
         os.mkdir(str(minecraftDirectory) + "\\instances\\")
 
-    #instanceName = instanceTextbox.get("0.0", "end-1c").strip()
-    #instancePath = os.path.join(minecraftDirectory, "instances", instanceName)
+        instancePath = os.path.join(minecraftDirectory, "instances", name)
 
-    #if os.path.exists(instancePath):
-        print(
-            "Instance with that name already exists, reinstalling Minecraft Version "
-            + versionChoice
-            + " to that instance."
-        )
-        #versionsPath = os.path.join(instancePath, "versions")
-        #if os.path.exists(versionsPath):
-            #shutil.rmtree(versionsPath)
-        #os.makedirs(versionsPath, exist_ok=True)
-    else:
-        #os.makedirs(instancePath, exist_ok=True)
+        if os.path.exists(instancePath):
+            print(
+                "Instance with that name already exists, reinstalling Minecraft Version "
+                + version
+                + " to that instance."
+            )
+            versionsPath = os.path.join(instancePath, "versions")
+            if os.path.exists(versionsPath):
+                shutil.rmtree(versionsPath)
+            os.makedirs(versionsPath, exist_ok=True)
+        else:
+            os.makedirs(instancePath, exist_ok=True)
 
-    #minecraftDirectory = instancePath
-
-    #if versionChoice == "latest":
-        versionChoice = minecraft_launcher_lib.utils.get_latest_version()["release"]
-
-    if versionChoice == "snapshot":
-        versionChoice = minecraft_launcher_lib.utils.get_latest_version()["snapshot"]
+        minecraftDirectory = instancePath
 
     if modLoader != "none":
         modLoader = minecraft_launcher_lib.mod_loader.get_mod_loader(modLoader)
@@ -507,12 +461,12 @@ def createInstance():
 
     msg = ntk.NTkMessageBox(
         title="Installation Complete",
-        #message="The instance: "
-        #+ instanceTextbox.get("0.0", "end-1c")
-        #+ " has been installed successfully! Launcher restart required to see changes.",
-        #icon="check",
-        #option_1="Restart Now",
-        #option_2="Restart Later",
+        message="The instance: "
+            + name
+            + " has been installed successfully! Launcher restart required to see changes.",
+            icon="check",
+            option_1="Restart Now",
+            option_2="Restart Later",
     )
     response = msg.get()
     if response == "Restart Now":
@@ -522,20 +476,31 @@ def createInstance():
 
 installProgressMax = 0
 
-
 def setStatus(status: str):
     print(status)
-
 
 def setProgress(progress: int):
     if installProgressMax != 0:
         print(f"{progress}/{installProgressMax}")
 
-
 def setMax(new_max: int):
     global installProgressMax
     installProgressMax = new_max
 
+####----                GUI                ----####
+
+textMainColor = ("#111214", "#ffffff")
+textSubColor = ("#555555", "#aaaaaa")
+
+bgMainColor = ("#f4f5f7", "#161719")
+bgSidebarColor = ("#eaecef", "#111214")
+bgCardColor = ("#ebeeef", "#111214")
+bgButtonColor = ("#dcdfe3", "#1c1d21")
+bgHoverColor = ("#cfd2d6", "#24262b")
+
+accentColor = "#1bd96a"
+accentHover = "#14a952"
+borderColor = ("#dcdfe3", "#24262b")
 
 app = ntk.NTk()
 app.geometry("960x540")
@@ -543,12 +508,13 @@ app.minsize(960, 540)
 app.title("Cubus Launcher")
 ntk.set_appearance_mode("dark")
 ntk.set_default_color_theme("purple")
+app.configure(fg_color=bgMainColor)
 
 app.grid_columnconfigure(1, weight=1)
 app.grid_rowconfigure(0, weight=1)
 
 try:
-    fontFamily = "Segoe UI"
+    fontFamily = "Minecraft"
 except Exception:
     pass
 
@@ -563,7 +529,7 @@ def refreshAccountDetails():
 class sidebarButton():
     def __init__(self, name: str):
         self.name = name
-        self.button = ntk.NTkButton(sidebar, text=name, font=ntk.NTkFont(family=fontFamily, size=14), command = self.changeTab)
+        self.button = ntk.NTkButton(sidebar, text=name, font=ntk.NTkFont(family=fontFamily, size=13, weight="bold"), fg_color="transparent", hover_color=bgButtonColor, text_color=textSubColor, command=self.changeTab)
         self.button.pack(pady=10, padx=20, anchor="center", fill="x")
         self.tab = mainContentFrame.add(name)
 
@@ -618,7 +584,7 @@ class LibraryEntry:
 
     def __init__(self, parent, name: str, details: str, versionLaunched: str, icon: bool, instancePath: str):
         # Card
-        self.frame = ntk.NTkFrame(parent,height=90,corner_radius=8,border_width=1,border_color=("#dcdfe3", "#24262b"))
+        self.frame = ntk.NTkFrame(parent,height=90,corner_radius=8,border_width=1,border_color=("#dcdfe3", "#24262b"), fg_color=("#1c1d21"))
         self.frame.pack(fill="x", padx=5, pady=6)
         self.frame.pack_propagate(False)
 
@@ -653,6 +619,16 @@ class LibraryEntry:
         self.detailsLabel = ntk.NTkLabel(self.infoFrame, text=details, font=ntk.NTkFont(family=fontFamily, size=11), anchor="w")
         self.detailsLabel.pack(fill="x", pady=(2, 6))
 
+        if "Unknown" in details:
+            try:
+                self.detailsLabel.configure(
+                    font=ntk.NTkFont(family="Standard Galactic Alpha Regular", size=11)
+                )
+            except Exception:
+                self.detailsLabel.configure(font=ntk.NTkFont(family=fontFamily, size=11))
+                pass
+            self.detailsLabel.configure(text_color = "#b12525")
+
         # Right section
         self.actionFrame = ntk.NTkFrame(self.frame, width=120, fg_color="transparent")
         self.actionFrame.pack(side="right", fill="y", padx=14)
@@ -664,7 +640,7 @@ class LibraryEntry:
             self.playButton.forget()
             threading.Thread(target=monitorMinecraft, args=(self,), daemon=True).start()
 
-        self.playButton = ntk.NTkButton(self.actionFrame, text="Play", width=80, height=30,fg_color="#009e00", font=ntk.NTkFont(family=fontFamily, size=11, weight="bold"), command=lambda: playButtonCommand(name, versionLaunched))
+        self.playButton = ntk.NTkButton(self.actionFrame, text="Play", width=80, height=30,fg_color=accentColor, text_color="#111214", hover_color=accentHover, font=ntk.NTkFont(family=fontFamily, size=11, weight="bold"), command=lambda: playButtonCommand(name, versionLaunched))
         self.playButton.pack(anchor="ne", pady=(12, 0))
 
         def quitButtonCommand():
@@ -672,23 +648,61 @@ class LibraryEntry:
             self.playButton.pack(anchor="ne", pady=(12, 0))
             self.quitButton.forget()
 
-        self.quitButton = ntk.NTkButton(self.actionFrame, text="Quit", width=80, height=30,fg_color="#9e0000", font=ntk.NTkFont(family=fontFamily, size=11, weight="bold"), command=lambda: quitButtonCommand())
+        self.quitButton = ntk.NTkButton(self.actionFrame, text="Quit", width=80, height=30,fg_color="#b12525", text_color="#111214", hover_color="#a14949", font=ntk.NTkFont(family=fontFamily, size=11, weight="bold"), command=lambda: quitButtonCommand())
 
         self.versionLabel = ntk.NTkLabel(self.actionFrame, text=details, font=ntk.NTkFont(family=fontFamily, size=10))
         self.versionLabel.pack(side="bottom", anchor="se", pady=(0, 8))
+        if "Unknown" in details:
+            self.versionLabel.configure(text_color="#b12525", text = "No version installed.")
 
     def onGameClosed(self):
         self.quitButton.forget()
         self.playButton.pack(anchor="ne", pady=(12, 0))
 
 
-sidebar = ntk.NTkFrame(app, corner_radius=0, fg_color=("#eaecef", "#202020"), width=144)
+class InstallOption:
+    def __init__(self, parent, title: str, desc: str, action=None):
+        self.frame = ntk.NTkButton(parent, height=75, corner_radius=8, fg_color=("#1c1d21"), hover_color=("#1c1d21"))
+        self.frame.pack(fill="x", padx=24, pady=6)
+        self.frame.pack_propagate(False)
+
+        # Icon placeholder
+        self.iconFrame = ntk.NTkFrame(self.frame,width=28,height=28,fg_color=("#dcdfe3", "#2d3035"),corner_radius=6)
+        self.iconFrame.pack(side="left", padx=16, pady=22)
+        self.iconFrame.pack_propagate(False)
+
+        # Text container
+        self.textFrame = ntk.NTkFrame(self.frame, fg_color="transparent")
+        self.textFrame.pack(side="left", fill="both", expand=True, padx=(16, 10), pady=12)
+
+        self.titleLabel = ntk.NTkLabel(self.textFrame,text=title,font=ntk.NTkFont(family=fontFamily, size=13, weight="bold"),text_color=("#111214", "#ffffff"),anchor="w",)
+        self.titleLabel.pack(fill="x")
+
+        self.descriptionLabel = ntk.NTkLabel(self.textFrame,text=desc,font=ntk.NTkFont(family=fontFamily, size=11),text_color=("#555555", "#aaaaaa"),anchor="w",)
+        self.descriptionLabel.pack(fill="x", pady=(2, 0))
+
+        # Make whole card clickable
+        if action:
+            self.frame.bind("<Button-1>", lambda e: action())
+            self.iconFrame.bind("<Button-1>", lambda e: action())
+            self.textFrame.bind("<Button-1>", lambda e: action())
+            self.titleLabel.bind("<Button-1>", lambda e: action())
+            self.descriptionLabel.bind("<Button-1>", lambda e: action())
+
+
+def CreateNewInstanceMenu1Open():
+    createInstanceFrame1.place(relx=0.5, rely=0.5, relwidth=0.75, relheight=0.85, anchor="center")
+
+def CreateNewInstanceMenu1Close():
+    createInstanceFrame1.place_forget()
+
+sidebar = ntk.NTkFrame(app, corner_radius=0, fg_color=bgSidebarColor, width=144)
 sidebar.grid(row=0, column=0, sticky="ns")
 
-title = ntk.NTkLabel(sidebar, text="Cubus Launcher", font=ntk.NTkFont(family=fontFamily, size=16, weight="bold"), fg_color="transparent")
+title = ntk.NTkLabel(sidebar, text="Cubus Launcher", font=ntk.NTkFont(family=fontFamily, size=24, weight="bold"), fg_color="transparent", text_color=textMainColor)
 title.pack(pady=10, padx=20, anchor="center", fill="x")
 
-mainContentFrame = ntk.NTkTabview(app)
+mainContentFrame = ntk.NTkTabview(app,fg_color="transparent",segmented_button_fg_color=bgSidebarColor,segmented_button_selected_color=accentColor,segmented_button_selected_hover_color=accentHover,)
 mainContentFrame.grid(row=0, column=1, sticky="nsew", padx=10, pady=20)
 
 sidebarLibraryButton = sidebarButton("Library")
@@ -696,12 +710,15 @@ sidebarExploreButton = sidebarButton("Explore")
 sidebarAccountButton = sidebarButton("Account")
 sidebarSettingsButton = sidebarButton("Settings")
 
+for tab in ["Library", "Explore", "Account", "Settings"]:
+    mainContentFrame.tab(tab).configure(fg_color=bgMainColor)
+
 placeholder2 = ntk.NTkLabel(mainContentFrame.tab("Explore"), text="Explore Content", font=ntk.NTkFont(family=fontFamily, size=14), fg_color="transparent")
 placeholder4 = ntk.NTkLabel(mainContentFrame.tab("Settings"), text="Settings Content", font=ntk.NTkFont(family=fontFamily, size=14), fg_color="transparent")
 placeholder2.pack(pady=10, padx=20, anchor="center", fill="x")
 placeholder4.pack(pady=10, padx=20, anchor="center", fill="x")
 
-createInstanceButton = ntk.NTkButton(sidebarLibraryButton.tab, text="+", width=30, height=30, font=ntk.NTkFont(family=fontFamily, size=20, weight="bold"))
+createInstanceButton = ntk.NTkButton(sidebarLibraryButton.tab, text="+", width=30, height=30, font=ntk.NTkFont(family=fontFamily, size=20, weight="bold"), command = CreateNewInstanceMenu1Open)
 createInstanceButton.pack(pady=10, padx=20, anchor="ne")
 
 instanceMenu = ntk.NTkScrollableFrame(sidebarLibraryButton.tab, corner_radius=0, fg_color="transparent")
@@ -711,16 +728,33 @@ updateInstances()
 accountMenu = ntk.NTkScrollableFrame(sidebarAccountButton.tab, corner_radius=0, fg_color="transparent")
 accountMenu.pack(pady=10, padx=20, anchor="center", fill="both", expand=True)
 
-accountNameLabel = ntk.NTkLabel(accountMenu, text = "You are not logged in.")
+accountNameLabel = ntk.NTkLabel(accountMenu, text = "You are not logged in.", font=ntk.NTkFont(family=fontFamily))
 accountNameLabel.pack(pady=10, padx=20, anchor="center", fill="x")
 
-loginButton = ntk.NTkButton(accountMenu, text="Login", command=lambda: login("online"))
+loginButton = ntk.NTkButton(accountMenu, text="Login", command=lambda: login("online"), font=ntk.NTkFont(family=fontFamily))
 loginButton.pack(pady=12, padx=10)
 
-logoutButton = ntk.NTkButton(accountMenu, text="Logout", command=logout, fg_color="#F55858", hover_color="#FF8787",)
+logoutButton = ntk.NTkButton(accountMenu, text="Logout", command=logout, fg_color="#F55858", hover_color="#FF8787",font=ntk.NTkFont(family=fontFamily))
 logoutButton.pack(pady=12, padx=10)
 
 mainContentFrame._segmented_button.grid_remove()
+
+createInstanceFrame1 = ntk.NTkFrame(app, fg_color=bgCardColor, border_width=1, border_color=borderColor, corner_radius=12)
+
+closeCreateNewInstanceMenu1Button = ntk.NTkButton(createInstanceFrame1, text="x", width=30, height=30, font=ntk.NTkFont(family=fontFamily, size=20, weight="bold"),fg_color = "transparent",hover_color = "#696969", command = CreateNewInstanceMenu1Close)
+closeCreateNewInstanceMenu1Button.pack(pady=10, padx=20, anchor="ne")
+
+createInstanceFrame1Header = ntk.NTkLabel(createInstanceFrame1, text="Create instance", font=ntk.NTkFont(family=fontFamily, size=18, weight="bold"))
+createInstanceFrame1Header.pack(side="top")
+
+customSetupButton = InstallOption(createInstanceFrame1, "Custom setup", "Start from scratch by picking a loader and game version.", lambda: print("Custom"))
+modpackSetupButton = InstallOption(
+    createInstanceFrame1,
+    "Install modpack",
+    "Browse modpacks on Modrinth.",
+    lambda: (sidebarExploreButton.changeTab(), CreateNewInstanceMenu1Close()),
+)
+importButton = InstallOption(createInstanceFrame1, "Import instance", "Import an instance from a \".mrpack\" file.", importMrpack)
 
 ##          AUTOMATIC LOGIN ATTEMPT          ##
 
